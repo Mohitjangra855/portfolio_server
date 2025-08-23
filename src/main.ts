@@ -19,7 +19,7 @@
     // Enable CORS for the frontend application
 
     app.enableCors({
-      origin:  process.env.FRONTEND_URL,
+      origin:  'https://portfolio-client-vert-pi.vercel.app',
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
       credentials: true,
       allowedHeaders:  ['Content-Type', 'Accept', 'Authorization'],
