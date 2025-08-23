@@ -16,7 +16,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ApiBody, ApiOperation } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { AuthGuard } from 'src/guard/admin.guard';
+import { AuthGuard } from '../guard/admin.guard';
 import { CacheInterceptor, CacheKey } from '@nestjs/cache-manager';
 import * as cacheManager from 'cache-manager';
 @Controller('project')

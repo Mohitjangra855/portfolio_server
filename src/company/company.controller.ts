@@ -4,7 +4,7 @@ import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { CacheInterceptor, CacheKey } from '@nestjs/cache-manager';
 import { ApiOperation } from '@nestjs/swagger';
-import { AuthGuard } from 'src/guard/admin.guard';
+import { AuthGuard } from '../guard/admin.guard';
 
 @Controller('company')
 export class CompanyController {

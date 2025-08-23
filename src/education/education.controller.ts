@@ -13,7 +13,7 @@ import { EducationService } from './education.service';
 import { CreateEducationDto } from './dto/create-education.dto';
 import { UpdateEducationDto } from './dto/update-education.dto';
 import { CacheInterceptor, CacheKey } from '@nestjs/cache-manager';
-import { AuthGuard } from 'src/guard/admin.guard';
+import { AuthGuard } from '../guard/admin.guard';
 import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('education')
