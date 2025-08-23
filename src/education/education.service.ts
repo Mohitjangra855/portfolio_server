@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateEducationDto } from './dto/create-education.dto';
 import { UpdateEducationDto } from './dto/update-education.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import * as cacheManager from 'cache-manager';
 @Injectable()
 export class EducationService {
