@@ -1,9 +1,9 @@
+import 'tsconfig-paths/register';
   import { NestFactory } from '@nestjs/core';
   import { AppModule } from './app.module';
   import { SwaggerModule } from '@nestjs/swagger/dist/swagger-module';
   import { DocumentBuilder } from '@nestjs/swagger';
   import cookieParser from 'cookie-parser';
-  import 'tsconfig-paths/register';
   async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
