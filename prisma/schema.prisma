@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String      @id @default(auto()) @map("_id") @db.ObjectId
+  email                   String      @unique
+  password                String
+  name                    String
+  age                     Int
+  role                    String      @default("user")
+  image                   String?
+  title                   String?
+  bio                     String?
+  address                 String?
+  phone                   String?
+  github                  String?
+  linkedin                String?
+  openSourceContributions Int?
+  interestDescription     String?
+  interests               String[]
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+  projects                Project[]   @relation("UserProjects") // Relation to projects
+  skills                  Skill[]     @relation("UserSkills") // Relation to skills
+  companies               Company[]   @relation("UserExperience") // Relation to experience
+  education               Education[] @relation("UserEducation") // Relation to education
+}
+
+model Project {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @map("user_id") @db.ObjectId
+  user         User     @relation("UserProjects", fields: [userId], references: [id])
+  title        String
+  shortDescription String?
+  description  String
+  status       Status
+  duration     String?
+  image        String?
+  technologies String[]
+  important    Boolean?  @default(false)
+  githubUrl    String?
+  liveUrl      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Skill {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  user        User     @relation("UserSkills", fields: [userId], references: [id])
+  userId      String   @map("user_id") @db.ObjectId
+  name        String
+  description String
+  image       String
+  tech        Tech
+  proficiency Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Education {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @map("user_id") @db.ObjectId
+  user        User     @relation("UserEducation", fields: [userId], references: [id])
+  institution String
+  degree      String
+  startDate   Int // Year when education started (e.g., 2020)
+  endDate     Int? // Year when education ended (null if ongoing)
+  totalYears  Int? // Total duration in years (calculated field for easy display)
+  description String? // Course details, achievements, specialization
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Company {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @map("user_id") @db.ObjectId
+  user        User     @relation("UserExperience", fields: [userId], references: [id])
+  company     String
+  position    String
+  startMonth  Int // 1-12
+  startYear   Int
+  endMonth    Int? // 1-12
+  endYear     Int? // Null if currently working
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum Tech {
+  frontendTech
+  backendTech
+  databaseTech
+  deploymentTech
+  developmentTools
+  designTools
+}
+
+enum Status {
+  starting
+  ongoing
+  completed
+  cancelled
+}
