@@ -19,7 +19,7 @@
     // Enable CORS for the frontend application
 
    app.enableCors({
-  origin: "https://portfolio-client-alpha-dusky.vercel.app" ,
+  origin: process.env.FRONTEND_URL ,
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],

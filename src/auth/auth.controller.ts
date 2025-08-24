@@ -58,13 +58,13 @@ export class AuthController {
     res.cookie('access_token', user.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge:  7 * 24 * 60 * 60 * 1000, // 1 week in milliseconds
     });
     res.cookie('refresh_token', user.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 2 * 7 * 24 * 60 * 60 * 1000, // 2 weeks in milliseconds
     });
 
@@ -101,13 +101,13 @@ export class AuthController {
     res.cookie('access_token', result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 1000 * 60 * 15 * 7, // 7 days in milliseconds
     });
     res.cookie('refresh_token', refreshTokenDto.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 2 * 7 * 24 * 60 * 60 * 1000, // 14d in milliseconds
     });
     console.log('Token refreshed successfully');
