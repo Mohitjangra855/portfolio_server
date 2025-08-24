@@ -18,12 +18,13 @@
 
     // Enable CORS for the frontend application
 
-    app.enableCors({
-      origin:  'https://portfolio-client-vert-pi.vercel.app',
-      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-      credentials: true,
-      allowedHeaders:  ['Content-Type', 'Accept', 'Authorization'],
-    });
+   app.enableCors({
+  origin: process.env.FRONTEND_URL ,
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
+});
+
     // app.setGlobalPrefix('api');
     //set cookie parser
   app.use(cookieParser());
