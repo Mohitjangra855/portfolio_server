@@ -10,7 +10,7 @@ export class ContactController {
   @ApiOperation({ summary: 'Send a contact form email' })
   @Post()
   create(@Body() { name, email, subject, message }: { name: string; email: string; subject: string; message: string }) {
-    return this.contactService.sendEmail(name, email, subject, message);
+   return this.contactService.sendEmail(name, email, subject, message);
   }
 
 }
