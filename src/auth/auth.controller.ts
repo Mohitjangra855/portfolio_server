@@ -45,21 +45,21 @@ export class AuthController {
     @Body() loginAuthDto: LoginAuthDto,
   ) {
     const user = await this.authService.login(loginAuthDto);
-    
+
     if (!user.success) {
       return {
         success: false,
         message: user.message,
       };
     }
-    console.log("user login success:", user); 
+    console.log('user login success:', user);
     // cookie or session handling can be added here
 
     res.cookie('access_token', user.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'none',
-      maxAge:  7 * 24 * 60 * 60 * 1000, // 1 week in milliseconds
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week in milliseconds
     });
     res.cookie('refresh_token', user.refreshToken, {
       httpOnly: true,
@@ -71,7 +71,7 @@ export class AuthController {
     return {
       success: true,
       message: 'Login successful',
-      user:user.user
+      user: user.user,
     };
   }
   // Refresh token endpoint
@@ -118,8 +118,17 @@ export class AuthController {
   @ApiOperation({ summary: 'User Logout' })
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+    });
+
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+    });
     this.cacheManager.del('current-user');
     return {
       success: true,
@@ -137,7 +146,7 @@ export class AuthController {
       success: true,
       message: 'User is authenticated',
       user: user,
-      isAuthenticated: true
+      isAuthenticated: true,
     };
   }
 
@@ -147,22 +156,21 @@ export class AuthController {
   @Get('profile')
   async getProfile() {
     const user = await this.authService.getProfile();
-    console.log("Fetched user profile from database");
-    
+    console.log('Fetched user profile from database');
+
     if (!user) {
       return {
         success: false,
         message: 'User not found',
       };
     }
-    
+
     return {
       success: true,
       user: user.data,
     };
   }
 
- 
   @ApiOperation({ summary: 'Update User Profile' })
   @Patch(':id')
   async updateProfile(
@@ -203,7 +211,7 @@ export class AuthController {
       // Clear the specific cache key so next getProfile will fetch fresh data
       await this.cacheManager.del('user-profile');
       await this.cacheManager.del('current-user');
-      
+
       return {
         success: true,
         message: 'Profile updated successfully',
@@ -218,7 +226,7 @@ export class AuthController {
     }
   }
 
-   //   @ApiOperation({summary: 'Update User Profile'})
+  //   @ApiOperation({summary: 'Update User Profile'})
   // @Patch(':id')
   // upUser(
   //   @Param('id') id: string,
