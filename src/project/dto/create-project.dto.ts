@@ -8,7 +8,12 @@ import {
   IsEnum,
   IsBoolean
 } from 'class-validator';
-import { Status } from '@prisma/client';
+export enum Status {
+  starting = 'starting',
+  ongoing = 'ongoing',
+  completed = 'completed',
+  cancelled = 'cancelled',
+}
 
 export class CreateProjectDto {
   @ApiProperty({

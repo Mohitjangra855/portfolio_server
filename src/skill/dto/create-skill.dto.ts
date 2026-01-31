@@ -1,6 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEnum, IsInt, IsNotEmpty, IsString } from "class-validator";
-import { Tech } from "@prisma/client"; 
+export enum Tech {
+  frontendTech = 'frontendTech',
+  backendTech = 'backendTech',
+  databaseTech = 'databaseTech',
+  deploymentTech = 'deploymentTech',
+  developmentTools = 'developmentTools',
+  designTools = 'designTools',
+}
 
 
 
