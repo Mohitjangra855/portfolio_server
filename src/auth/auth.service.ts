@@ -1,21 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { PrismaService } from '../prisma/prisma.service'; // Adjust the import path as necessary
+import { PrismaService } from '../prisma/prisma.service';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { normalizeEmail } from './utils/normalize-email';
+
+type LoginFailureReason = 'user_not_found' | 'invalid_password' | 'jwt_not_configured';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
+
   async register(createAuthDto: CreateAuthDto) {
-    // Check if the user already exists
+    const email = normalizeEmail(createAuthDto.email);
     const existingUser = await this.prismaService.user.findUnique({
-      where: { email: createAuthDto.email },
+      where: { email },
     });
     if (existingUser) {
       return {
@@ -23,39 +30,56 @@ export class AuthService {
         message: 'User with this email already exists',
       };
     }
-    // Create a new user
+
     const hashedPassword = bcrypt.hashSync(createAuthDto.password, 10);
-    createAuthDto.password = hashedPassword; // Store the hashed password
     const auth = await this.prismaService.user.create({
-      data: createAuthDto,
+      data: {
+        ...createAuthDto,
+        email,
+        password: hashedPassword,
+      },
     });
-    console.log('Auth created:', auth);
+    this.logger.log(`User registered: ${email}`);
     return {
       success: true,
       message: 'Auth created successfully',
-      data: auth,
+      data: this.omitPassword(auth),
     };
   }
 
   async login(loginAuthDto: LoginAuthDto) {
-    const { email, password } = loginAuthDto;
-    const user = await this.prismaService.user.findUnique({
-      where: { email },
-    });
+    const email = normalizeEmail(loginAuthDto.email);
+    const { password } = loginAuthDto;
 
+    const user = await this.findUserByEmail(email);
     if (!user) {
+      this.logger.warn(`Login failed: user not found (${email})`);
       return {
         success: false,
-        message: 'User not found',
+        message: 'Invalid credentials',
+        reason: 'user_not_found' satisfies LoginFailureReason,
       };
     }
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      this.logger.warn(`Login failed: invalid password (${email})`);
       return {
         success: false,
-        message: 'Invalid password',
+        message: 'Invalid credentials',
+        reason: 'invalid_password' satisfies LoginFailureReason,
       };
     }
+
+    if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+      this.logger.error('JWT_SECRET or JWT_REFRESH_SECRET is not set');
+      return {
+        success: false,
+        message: 'Authentication service is misconfigured',
+        reason: 'jwt_not_configured' satisfies LoginFailureReason,
+      };
+    }
+
     const accessToken = this.jwtService.sign(
       { userId: user.id, email: user.email },
       { expiresIn: '7d', secret: process.env.JWT_SECRET },
@@ -64,13 +88,35 @@ export class AuthService {
       { userId: user.id, email: user.email },
       { expiresIn: '14d', secret: process.env.JWT_REFRESH_SECRET },
     );
+
+    this.logger.log(`Login successful: ${email}`);
     return {
       success: true,
       message: 'Login successful',
       accessToken,
       refreshToken,
-      user,
+      user: this.omitPassword(user),
     };
+  }
+
+  /** Exact match first; case-insensitive fallback for emails stored before normalization. */
+  private async findUserByEmail(email: string): Promise<User | null> {
+    const byNormalized = await this.prismaService.user.findUnique({
+      where: { email },
+    });
+    if (byNormalized) {
+      return byNormalized;
+    }
+
+    const users = await this.prismaService.user.findMany();
+    return users.find((u) => normalizeEmail(u.email) === email) ?? null;
+  }
+
+  private omitPassword<T extends { password?: string }>(
+    user: T,
+  ): Omit<T, 'password'> {
+    const { password: _password, ...safeUser } = user;
+    return safeUser;
   }
 
   async refresh(refreshToken: string) {
@@ -97,7 +143,7 @@ export class AuthService {
         accessToken: newAccessToken,
       };
     } catch (err) {
-      console.log('Error refreshing token:', err);
+      this.logger.warn('Error refreshing token', err);
       return {
         success: false,
         message: 'Invalid refresh token',
@@ -105,35 +151,28 @@ export class AuthService {
       };
     }
   }
+
   async getProfile() {
     try {
-      console.log('Fetching user profile from service');
       const user = await this.prismaService.user.findFirst({
-        where: { role: 'admin' }, // Adjust the query as needed
+        where: { role: 'admin' },
         include: {
           projects: {
             orderBy: [{ createdAt: 'desc' }],
-          }, // Include user's projects
-          skills: true, // Include user's skills
+          },
+          skills: true,
           education: {
             orderBy: [{ startDate: 'desc' }, { endDate: 'desc' }],
-          }, // Include user's education
+          },
           companies: {
             orderBy: [
-              {
-                endYear: 'asc', // null values first (Prisma default for asc is NULLs first)
-              },
-              {
-                startYear: 'desc',
-              },
-              {
-                startMonth: 'desc',
-              },
+              { endYear: 'asc' },
+              { startYear: 'desc' },
+              { startMonth: 'desc' },
             ],
-          }, // Include user's companies - latest first
+          },
         },
       });
-      console.log('User profile all data retrieved in service');
       if (!user) {
         return null;
       }
@@ -141,10 +180,10 @@ export class AuthService {
       return {
         success: true,
         message: 'User profile retrieved successfully',
-        data: user,
+        data: this.omitPassword(user),
       };
     } catch (err) {
-      console.log('Error retrieving user profile:', err);
+      this.logger.warn('Error retrieving user profile', err);
       return {
         success: false,
         message: 'Invalid access token',
@@ -160,7 +199,7 @@ export class AuthService {
       });
       return payload;
     } catch (err) {
-      console.log('Error verifying token:', err);
+      this.logger.warn('Error verifying token', err);
       return null;
     }
   }
@@ -170,20 +209,29 @@ export class AuthService {
   }
 
   async findOne(id: string) {
-    return this.prismaService.user.findUnique({
+    const user = await this.prismaService.user.findUnique({
       where: { id },
     });
+    return user ? this.omitPassword(user) : null;
   }
 
   async update(id: string, updateAuthDto: UpdateAuthDto) {
+    const data: UpdateAuthDto = { ...updateAuthDto };
+    if (data.email) {
+      data.email = normalizeEmail(data.email);
+    }
+    if (data.password) {
+      data.password = bcrypt.hashSync(data.password, 10);
+    }
+
     const updatedUser = await this.prismaService.user.update({
       where: { id },
-      data: updateAuthDto,
+      data,
     });
     return {
       success: true,
       message: 'User updated successfully',
-      user: updatedUser,
+      user: this.omitPassword(updatedUser),
     };
   }
 

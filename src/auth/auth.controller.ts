@@ -18,7 +18,7 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { ApiBody, ApiOperation } from '@nestjs/swagger';
-import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
+import { CacheInterceptor, CacheKey } from '@nestjs/cache-manager';
 import * as cacheManager from 'cache-manager';
 import { AuthGuard } from '../guard/admin.guard';
 
@@ -35,8 +35,6 @@ export class AuthController {
   register(@Body() createAuthDto: CreateAuthDto) {
     return this.authService.register(createAuthDto);
   }
-  @UseInterceptors(CacheInterceptor)
-  @CacheKey('current-user')
   @ApiBody({ type: LoginAuthDto })
   @ApiOperation({ summary: 'User Login' })
   @Post('login')
@@ -52,7 +50,6 @@ export class AuthController {
         message: user.message,
       };
     }
-    console.log('user login success:', user);
     // cookie or session handling can be added here
 
     res.cookie('access_token', user.accessToken, {

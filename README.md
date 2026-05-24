@@ -42,16 +42,21 @@ npm install
 ```
 
 ### 2. Set up environment variables
-Create a `.env` file in the `server/` directory. Example:
+Create a `.env` file in the project root. Example:
 ```
-DATABASE_URL="postgresql://user:password@localhost:5432/portfolio"
+DATABASE_URL="mongodb+srv://user:password@cluster.mongodb.net/portfolio?retryWrites=true&w=majority"
 JWT_SECRET="your_jwt_secret"
-REDIS_URL="redis://localhost:6379"
+JWT_REFRESH_SECRET="your_jwt_refresh_secret"
+FRONTEND_URL="http://localhost:5173"
+NODE_ENV="development"
+PORT=3000
 ```
 
-### 3. Run Prisma migrations
+On **Render**, set the same variables in the service Environment tab. `DATABASE_URL` must point to the same MongoDB Atlas cluster where your admin user exists.
+
+### 3. Generate Prisma client
 ```bash
-npx prisma migrate dev
+npx prisma generate
 ```
 
 ### 4. Start the server
@@ -99,8 +104,8 @@ Server will run on `http://localhost:3000` by default.
 ## Technologies Used
 - NestJS
 - Prisma ORM
-- PostgreSQL
-- Redis
+- MongoDB Atlas
+- In-memory cache (cache-manager)
 - JWT
 - Swagger
 - class-validator
